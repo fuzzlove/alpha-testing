@@ -1,6 +1,8 @@
 Write-Host "[-] cmdl32 Downloader - liquidsky ^_~"
 # Thanks to Elliot Killick (@elliotkillick) for the discovery of the lolbin
 
+$PSScriptRoot = (Get-Location).Path
+
 # Change to the script's directory
 Set-Location -Path $PSScriptRoot
 
