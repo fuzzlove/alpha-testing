@@ -75,5 +75,5 @@ Remove-Item -Path "$tempDir\settings.txt" -Force
 Write-Host "[*] Script complete."
 
 # Optionally, clean up the temp directory if you want
-Remove-Item -Path $tempDir -Recurse -Force
-Write-Host "[*] Temp directory removed."
+# Remove-Item -Path $tempDir -Recurse -Force
+# Write-Host "[*] Temp directory removed."
