@@ -84,7 +84,3 @@ Write-Host "[*] Cleaning up downloaded file"
 Remove-Item -Path "$tempDir\whois.exe" -Force
 Remove-Item -Path "$tempDir\settings.txt" -Force
 Write-Host "[*] Script complete."
-
-# Optionally, clean up the temp directory if you want
-Remove-Item -Path $tempDir -Recurse -Force
-Write-Host "[*] Temp directory removed."
