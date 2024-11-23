@@ -58,7 +58,7 @@ if ($downloadedFile) {
     # Debug output: Check the target path
     Write-Host "[*] Target path: $targetPath"
     
-    # Try renaming (or moving) the file
+    # Try renaming (or moving) the file using Move-Item
     try {
         Move-Item -Path $downloadedFile.FullName -Destination $targetPath -Force
         Write-Host "[*] Renamed (moved) VPN*.tmp to whois.exe."
@@ -86,5 +86,5 @@ Remove-Item -Path "$tempDir\settings.txt" -Force
 Write-Host "[*] Script complete."
 
 # Optionally, clean up the temp directory if you want
-#Remove-Item -Path $tempDir -Recurse -Force
-#Write-Host "[*] Temp directory removed."
+Remove-Item -Path $tempDir -Recurse -Force
+Write-Host "[*] Temp directory removed."
