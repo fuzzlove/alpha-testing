@@ -6,7 +6,7 @@ New-Item -Path $tempDir -ItemType Directory -Force
 
 # Change to the temp directory
 Set-Location -Path $tempDir
-Write-Host "[*] Working directory changed to $tempDir"
+Write-Host "[*] Working directory changed to ${tempDir}"
 
 Write-Host "[*] Denying delete permissions for current user"
 # Deny delete permissions in the temp directory for the current user
@@ -68,7 +68,7 @@ Write-Host "[*] Reverting permissions"
 icacls $tempDir /remove:d "$env:USERNAME"
 
 # Debugging: List all files in the temp directory to check if the download succeeded
-Write-Host "[*] Listing files in $tempDir:"
+Write-Host "[*] Listing files in ${tempDir}:"
 Get-ChildItem -Path $tempDir
 
 Write-Host "[*] Renaming downloaded file for execution"
