@@ -31,7 +31,7 @@ Set-Content -Path "$tempDir\settings.ini" -Value $settingsContent
 #Write-Host "[*] Performing download with cmdl32"
 # Assuming cmdl32 is in system32 or accessible
 $cmdl32Path = "cmdl32"
-$arguments = "/lan /vpn `"$tempDir\settings.ini`""
+$arguments = "-lan -vpn `"$tempDir\settings.ini`""
 
 try {
     Start-Process -FilePath $cmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
