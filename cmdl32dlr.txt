@@ -72,5 +72,3 @@ Write-Host "[*] Cleaning up downloaded file"
 Remove-Item -Path "$tempDir\whois.exe" -Force
 Remove-Item -Path "$tempDir\settings.txt" -Force
 Write-Host "[*] Script complete."
-
-From <https://raw.githubusercontent.com/fuzzlove/h4v0k/refs/heads/main/cmdl32dlr.ps1> 
